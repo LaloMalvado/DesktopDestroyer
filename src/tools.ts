@@ -20,7 +20,6 @@ type ToolsRuntime = {
 };
 
 const noop = () => {};
-
 let runtime: ToolsRuntime = {
   getDpr: () => 1,
   getDamageCtx: () => null,
@@ -30,25 +29,20 @@ let runtime: ToolsRuntime = {
 export function configureToolsRuntime(partial: Partial<ToolsRuntime>) {
   runtime = { ...runtime, ...partial };
 }
+function getRuntime() { return runtime; }
 
-function getRuntime() {
-  return runtime;
-}
-
-// --- Martillo (h)
-export const h: Tool = {
+// === Herramientas con nombres largos (mismo cuerpo que hoy) ===
+export const hammerTool: Tool = {
   name: "hammer",
-  init() {},
-  resetForRun() {},
-  hitAt(x, y) {
+  init(){},
+  resetForRun(){},
+  hitAt(x,y){
     const { getDpr, getDamageCtx } = getRuntime();
     const dpr = typeof getDpr === "function" ? getDpr() : 1;
     const damageCtx = typeof getDamageCtx === "function" ? getDamageCtx() : null;
 
     Effects.spawnHit(x, y, { dpr });
-    if (Audio && typeof Audio.playHammer === "function") {
-      Audio.playHammer();
-    }
+    if (Audio && typeof Audio.playHammer === "function") Audio.playHammer();
 
     if (damageCtx) {
       const R = 46 * dpr;
@@ -56,9 +50,7 @@ export const h: Tool = {
       grd.addColorStop(0, "rgba(40,40,45,.6)");
       grd.addColorStop(1, "rgba(40,40,45,0)");
       damageCtx.fillStyle = grd;
-      damageCtx.beginPath();
-      damageCtx.arc(x, y, R, 0, Math.PI * 2);
-      damageCtx.fill();
+      damageCtx.beginPath(); damageCtx.arc(x, y, R, 0, Math.PI * 2); damageCtx.fill();
       damageCtx.strokeStyle = "rgba(20,20,30,.55)";
       damageCtx.lineWidth = 1.5 * dpr;
       for (let i = 0; i < 12; i++) {
@@ -70,65 +62,33 @@ export const h: Tool = {
         damageCtx.stroke();
       }
     }
-
     Effects.addShake(3 * dpr, 120);
     Bugs.hitAt(x, y, "hammer");
   },
-  getAll() {
-    return [];
-  },
+  getAll(){ return []; },
 };
 
-// --- Lanza-llamas (f)
-export const f: Tool = {
+export const flameTool: Tool = {
   name: "flame",
-  init() {},
-  resetForRun() {
-    if (Audio && typeof Audio.stopFlame === "function") {
-      Audio.stopFlame();
-    }
-  },
-  start() {
-    if (Audio && typeof Audio.startFlame === "function") {
-      Audio.startFlame();
-    }
-  },
-  stop() {
-    if (Audio && typeof Audio.stopFlame === "function") {
-      Audio.stopFlame();
-    }
-  },
-  hitAt(x, y, dt = 0) {
-    const { getDpr } = getRuntime();
-    const dpr = typeof getDpr === "function" ? getDpr() : 1;
+  init(){},
+  resetForRun(){ if (Audio?.stopFlame) Audio.stopFlame(); },
+  start(){ if (Audio?.startFlame) Audio.startFlame(); },
+  stop(){ if (Audio?.stopFlame) Audio.stopFlame(); },
+  hitAt(x,y,dt=0){
+    const dpr = (typeof getRuntime().getDpr === "function") ? getRuntime().getDpr() : 1;
     Effects.spawnFlame(x, y, { dpr });
     Bugs.hitAt(x, y, "flame", { dt });
   },
-  getAll() {
-    return [];
-  },
+  getAll(){ return []; },
 };
 
-// --- Insecticida (i)
-export const i: Tool = {
+export const sprayTool: Tool = {
   name: "spray",
-  init() {},
-  resetForRun() {
-    if (Audio && typeof Audio.stopSpray === "function") {
-      Audio.stopSpray();
-    }
-  },
-  start() {
-    if (Audio && typeof Audio.startSpray === "function") {
-      Audio.startSpray();
-    }
-  },
-  stop() {
-    if (Audio && typeof Audio.stopSpray === "function") {
-      Audio.stopSpray();
-    }
-  },
-  hitAt(x, y, dt = 0) {
+  init(){},
+  resetForRun(){ if (Audio?.stopSpray) Audio.stopSpray(); },
+  start(){ if (Audio?.startSpray) Audio.startSpray(); },
+  stop(){ if (Audio?.stopSpray) Audio.stopSpray(); },
+  hitAt(x,y,dt=0){
     const { getDpr, getDamageCtx } = getRuntime();
     const dpr = typeof getDpr === "function" ? getDpr() : 1;
     const damageCtx = typeof getDamageCtx === "function" ? getDamageCtx() : null;
@@ -141,78 +101,49 @@ export const i: Tool = {
       damageCtx.save();
       damageCtx.globalCompositeOperation = "lighter";
       damageCtx.fillStyle = g;
-      damageCtx.beginPath();
-      damageCtx.arc(x, y, R, 0, Math.PI * 2);
-      damageCtx.fill();
+      damageCtx.beginPath(); damageCtx.arc(x, y, R, 0, Math.PI * 2); damageCtx.fill();
       damageCtx.restore();
     }
     Bugs.hitAt(x, y, "spray", { dt });
   },
-  getAll() {
-    return [];
-  },
+  getAll(){ return []; },
 };
 
-// --- Ametralladora (g)
-export const g: Tool = {
+export const gunTool: Tool = {
   name: "gun",
-  init() {},
-  resetForRun() {
-    const { resetGunCooldown } = getRuntime();
-    if (typeof resetGunCooldown === "function") {
-      resetGunCooldown();
-    }
-  },
-  start() {},
-  stop() {},
-  hitAt(x, y) {
+  init(){},
+  resetForRun(){ const r = getRuntime().resetGunCooldown; if (typeof r === "function") r(); },
+  start(){}, stop(){},
+  hitAt(x,y){
     const { getDpr, getDamageCtx } = getRuntime();
     const dpr = typeof getDpr === "function" ? getDpr() : 1;
     const damageCtx = typeof getDamageCtx === "function" ? getDamageCtx() : null;
-    if (Audio && typeof Audio.playGun === "function") {
-      Audio.playGun();
-    }
+    if (Audio?.playGun) Audio.playGun();
     if (damageCtx) {
       damageCtx.save();
       damageCtx.globalCompositeOperation = "destination-out";
-      damageCtx.beginPath();
-      damageCtx.arc(x, y, 4.2 * dpr, 0, Math.PI * 2);
-      damageCtx.fill();
+      damageCtx.beginPath(); damageCtx.arc(x, y, 4.2 * dpr, 0, Math.PI * 2); damageCtx.fill();
       damageCtx.restore();
     }
     Effects.spawnGun(x, y, { dpr });
     Effects.addShake(3 * dpr, 60);
     Bugs.hitAt(x, y, "gun");
   },
-  getAll() {
-    return [];
-  },
+  getAll(){ return []; },
 };
 
-const toolsByKey = { h, f, i, g };
+// Mapeo por tecla (sin letras exportadas)
+const toolsByKey = { h: hammerTool, f: flameTool, i: sprayTool, g: gunTool };
 let toolKey = "h";
+export function setToolByKey(k){ if (toolsByKey[k]) toolKey = k; }
+export function getTool(){ return toolsByKey[toolKey] || hammerTool; }
+export function getToolKey(){ return toolKey; }
+export function initAll(){ hammerTool.init(); flameTool.init(); sprayTool.init(); gunTool.init(); }
 
-export function setToolByKey(k) {
-  if (toolsByKey[k]) {
-    toolKey = k;
-  }
-}
-
-export function getTool() {
-  return toolsByKey[toolKey] || h;
-}
-
-export function getToolKey() {
-  return toolKey;
-}
-
-export function initAll() {
-  h.init();
-  f.init();
-  i.init();
-  g.init();
-}
-
+// Compat global para código legado/tests
 if (typeof window !== "undefined") {
-  Object.assign(window, { h, f, i, g, setToolByKey, getTool });
+  Object.assign(window, {
+    h: hammerTool, f: flameTool, i: sprayTool, g: gunTool,
+    setToolByKey, getTool
+  });
 }
