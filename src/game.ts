@@ -3,10 +3,7 @@ import { Audio } from "./audio";
 import { Bugs, MAX_BUGS } from "./bugs";
 import { Effects } from "./effects";
 import {
-  h,
-  f,
-  i,
-  g,
+  hammerTool, flameTool, sprayTool, gunTool,
   getTool,
   getToolKey,
   setToolByKey,
@@ -349,7 +346,9 @@ try{document.getElementById('lost').style.display='none'}catch(e){}try{document.
 resetVoidLayer();
 Effects.clear();
 shootCooldown=0;
-[h,f,i,g].forEach(t=>{if(t&&typeof t.resetForRun==='function')t.resetForRun();});
+[hammerTool, flameTool, sprayTool, gunTool].forEach(t => {
+  if (t && typeof t.resetForRun === "function") t.resetForRun();
+});
 Bugs.resetForRun();
 runStart=null;
 stopFlameAudio();
