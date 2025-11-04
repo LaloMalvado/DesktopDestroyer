@@ -32,7 +32,7 @@ export function configureToolsRuntime(partial: Partial<ToolsRuntime>) {
 function getRuntime() { return runtime; }
 
 // === Herramientas con nombres largos (mismo cuerpo que hoy) ===
-export const hammerTool: Tool = {
+const h: Tool = {
   name: "hammer",
   init(){},
   resetForRun(){},
@@ -68,7 +68,7 @@ export const hammerTool: Tool = {
   getAll(){ return []; },
 };
 
-export const flameTool: Tool = {
+const f: Tool = {
   name: "flame",
   init(){},
   resetForRun(){ if (Audio?.stopFlame) Audio.stopFlame(); },
@@ -82,7 +82,7 @@ export const flameTool: Tool = {
   getAll(){ return []; },
 };
 
-export const sprayTool: Tool = {
+const i: Tool = {
   name: "spray",
   init(){},
   resetForRun(){ if (Audio?.stopSpray) Audio.stopSpray(); },
@@ -109,7 +109,7 @@ export const sprayTool: Tool = {
   getAll(){ return []; },
 };
 
-export const gunTool: Tool = {
+const g: Tool = {
   name: "gun",
   init(){},
   resetForRun(){ const r = getRuntime().resetGunCooldown; if (typeof r === "function") r(); },
@@ -133,12 +133,20 @@ export const gunTool: Tool = {
 };
 
 // Mapeo por tecla (sin letras exportadas)
-const toolsByKey = { h: hammerTool, f: flameTool, i: sprayTool, g: gunTool };
+const toolsByKey = { h, f, i, g };
 let toolKey = "h";
 export function setToolByKey(k){ if (toolsByKey[k]) toolKey = k; }
-export function getTool(){ return toolsByKey[toolKey] || hammerTool; }
+export function getTool(){ return toolsByKey[toolKey] || h; }
 export function getToolKey(){ return toolKey; }
-export function initAll(){ hammerTool.init(); flameTool.init(); sprayTool.init(); gunTool.init(); }
+export function initAll(){
+  const t = toolsByKey;
+  t["h"].init(); t["f"].init(); t["i"].init(); t["g"].init();
+}
+
+export const hammerTool = h;
+export const flameTool  = f;
+export const sprayTool  = i;
+export const gunTool    = g;
 
 // Compat global para código legado/tests
 if (typeof window !== "undefined") {
