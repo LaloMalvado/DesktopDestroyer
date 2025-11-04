@@ -4,5 +4,10 @@ export const Audio = {
   playHammer() {},
   startFlame() {},
   stopFlame() {},
-  mute(_v) {}
+  startSpray() {},
+  stopSpray() {},
+  playGun() {},
+  startGun() {},
+  stopGun() {},
+  mute(_v) {},
 };
