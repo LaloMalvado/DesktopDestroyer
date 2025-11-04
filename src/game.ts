@@ -2,6 +2,17 @@
 import { Audio } from "./audio";
 import { Bugs, MAX_BUGS } from "./bugs";
 import { Effects } from "./effects";
+import {
+  h,
+  f,
+  i,
+  g,
+  getTool,
+  getToolKey,
+  setToolByKey,
+  initAll,
+  configureToolsRuntime,
+} from "./tools";
 
 (() => {
 'use strict';
@@ -25,11 +36,17 @@ const voidCanvas=document.createElement('canvas'),voidCtx=voidCanvas.getContext(
 let voidEstimate=0,LOST=false;
 const VOID_LIMIT=0.5;
 let W=0,H=0,last=0,fps=0;
-let toolKey='h';
 const TOOL_NAME_BY_KEY={h:'hammer',f:'flame',i:'spray',g:'gun'};
 const TOOL_KEY_BY_NAME={hammer:'h',flame:'f',spray:'i',gun:'g'};
 const pointer={x:0,y:0,down:false};
 let vectorMode=false,shootCooldown=0;
+configureToolsRuntime({
+  getDpr: () => dpr,
+  getDamageCtx: () => damageCtx,
+  resetGunCooldown: () => {
+    shootCooldown=0;
+  },
+});
 let runStart=null,bestTime=null,WIN_SHOWN=false;
 let EAT_RATE=0.6;
 let audioCtx=null,masterGain=null,audioMuted=false,noiseBuf=null,flameNode=null,flameGain=null,sprayNode=null,sprayGain=null,comp=null;
@@ -136,8 +153,7 @@ th.start();
 g.gain.exponentialRampToValueAtTime(.001,t+.12);
 tg.gain.exponentialRampToValueAtTime(.0001,t+.15);
 n.stop(t+.16);
-th.stop(t+.18)}function playHammerEffect(){try{const fn=Audio&&Audio.playHammer;if(typeof fn==='function'){const src=Function.prototype.toString.call(fn).replace(/\s+/g,'');if(src!=='functionplayHammer(){}'){fn();return}}}catch(e){}
-playHammer();}function playGun(){if(audioMuted)return;
+th.stop(t+.18)}function playGun(){if(audioMuted)return;
 ensureAudio();
 const src=audioCtx.createBufferSource();
 src.buffer=makeNoiseBuffer();
@@ -153,7 +169,14 @@ g.connect(masterGain);
 const t=audioCtx.currentTime;
 src.start();
 g.gain.exponentialRampToValueAtTime(.0001,t+.045);
-src.stop(t+.05)}const ML='#FFE600',MP='#00B1EA';
+src.stop(t+.05)}
+Audio.playHammer=playHammer;
+Audio.startFlame=startFlameAudio;
+Audio.stopFlame=stopFlameAudio;
+Audio.startSpray=startSprayAudio;
+Audio.stopSpray=stopSprayAudio;
+Audio.playGun=playGun;
+const ML='#FFE600',MP='#00B1EA';
 function setBugCount(n){const count=Math.min(MAX_BUGS,n|0);
 Bugs.spawnInitial(count);
 Bugs.clampCap();
@@ -203,68 +226,17 @@ ctx.globalAlpha=.12;
 ctx.strokeStyle='rgba(255,255,255,.9)';
 ctx.lineWidth=1.2*dpr;
 ctx.stroke();
-ctx.globalAlpha=1}ctx.restore()}const h={name:'hammer',init(){},resetForRun(){},hitAt(x,y){Effects.spawnHit(x,y,{dpr});
-playHammerEffect();
-const R=46*dpr,grd=damageCtx.createRadialGradient(x,y,1,x,y,R);
-grd.addColorStop(0,'rgba(40,40,45,.6)');
-grd.addColorStop(1,'rgba(40,40,45,0)');
-damageCtx.fillStyle=grd;
-damageCtx.beginPath();
-damageCtx.arc(x,y,R,0,Math.PI*2);
-damageCtx.fill();
-damageCtx.strokeStyle='rgba(20,20,30,.55)';
-damageCtx.lineWidth=1.5*dpr;
-for(let i=0;
-i<12;
-i++){const a=Math.random()*Math.PI*2,len=(40+Math.random()*90)*dpr;
-damageCtx.beginPath();
-damageCtx.moveTo(x,y);
-damageCtx.lineTo(x+Math.cos(a)*len,y+Math.sin(a)*len);
-damageCtx.stroke()}
-Effects.addShake(3*dpr,120);
-Bugs.hitAt(x,y,'hammer');},getAll(){return[];}};function impactHammer(x,y){h.hitAt(x,y);}function burnAt(x,y,dt){Effects.spawnFlame(x,y,{dpr});
-Bugs.hitAt(x,y,'flame',{dt});}function sprayAt(x,y,dt){Effects.spawnSpray(x,y,{dpr});
-const R=130*dpr,g=damageCtx.createRadialGradient(x,y,8,x,y,R);
-g.addColorStop(0,'rgba(80,255,120,.12)');
-g.addColorStop(1,'rgba(80,255,120,0)');
-damageCtx.save();
-damageCtx.globalCompositeOperation='lighter';
-damageCtx.fillStyle=g;
-damageCtx.beginPath();
-damageCtx.arc(x,y,R,0,Math.PI*2);
-damageCtx.fill();
-damageCtx.restore();
-Bugs.hitAt(x,y,'spray',{dt});}function shootAt(x,y){playGun();
-damageCtx.save();
-damageCtx.globalCompositeOperation='destination-out';
-damageCtx.beginPath();
-damageCtx.arc(x,y,4.2*dpr,0,Math.PI*2);
-damageCtx.fill();
-damageCtx.restore();
-Effects.spawnGun(x,y,{dpr});
-Effects.addShake(3*dpr,60);
-Bugs.hitAt(x,y,'gun');}
-const f={name:'flame',init(){},resetForRun(){stopFlameAudio();},start(){startFlameAudio();},stop(){stopFlameAudio();},hitAt(x,y,dt=0){burnAt(x,y,dt);},getAll(){return[];}};
-const i={name:'spray',init(){},resetForRun(){stopSprayAudio();},start(){startSprayAudio();},stop(){stopSprayAudio();},hitAt(x,y,dt=0){sprayAt(x,y,dt);},getAll(){return[];}};
-const g={name:'gun',init(){},resetForRun(){shootCooldown=0;},start(){},stop(){},hitAt(x,y){shootAt(x,y);},getAll(){return[];}};
-const tools={h,f,i,g};
-function currentToolObj(){return tools[toolKey]||h;}
-function currentToolName(){return TOOL_NAME_BY_KEY[toolKey]||'hammer';}
-if(typeof window!=='undefined'){window.h=h;window.f=f;window.i=i;window.g=g;}
-function setTool(t){const prevTool=currentToolObj();
-const prevKey=toolKey;
-const nextKey=TOOL_KEY_BY_NAME[t]||'h';
-const nextName=TOOL_NAME_BY_KEY[nextKey]||'hammer';
-toolKey=nextKey;
-if(prevTool&&prevKey!==nextKey&&typeof prevTool.stop==='function')prevTool.stop();
-document.querySelectorAll('.btn[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===nextName));
-updateHUD()}canvas.addEventListener('pointerdown',e=>{pointer.down=true;
+ctx.globalAlpha=1}ctx.restore()}function currentToolObj(){return getTool();}
+function currentToolName(){const activeKey=getToolKey();return TOOL_NAME_BY_KEY[activeKey]||'hammer';}
+function setTool(t){const prevKey=getToolKey();const prevTool=currentToolObj();const nextKey=TOOL_KEY_BY_NAME[t]||'h';const nextName=TOOL_NAME_BY_KEY[nextKey]||'hammer';if(prevTool&&prevKey!==nextKey&&typeof prevTool.stop==='function')prevTool.stop();setToolByKey(nextKey);document.querySelectorAll('.btn[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===nextName));updateHUD();}
+canvas.addEventListener('pointerdown',e=>{pointer.down=true;
 updatePointer(e);
 if(!runStart)return;
 ensureAudio();
 const tool=currentToolObj();
+const activeKey=getToolKey();
 if(tool&&typeof tool.start==='function')tool.start();
-if(toolKey==='h'||toolKey==='g')tool.hitAt(pointer.x,pointer.y)});
+if(tool&&(activeKey==='h'||activeKey==='g')&&typeof tool.hitAt==='function')tool.hitAt(pointer.x,pointer.y)});
 canvas.addEventListener('pointerup',()=>{pointer.down=false;
 const tool=currentToolObj();
 if(tool&&typeof tool.stop==='function')tool.stop()});
@@ -312,6 +284,8 @@ voidCanvas.width=W;
 voidCanvas.height=H}window.addEventListener('resize',resize);
 function boot(){try{applyI18N();
 resize();
+initAll();
+if(false){console.debug('TOOLS',{hasH:!!h,hasF:!!f,hasI:!!i,hasG:!!g});}
 Bugs.init({dpr,getBounds:()=>({width:W,height:H}),getEatRate:()=>EAT_RATE,onBugEat:(x,y,r)=>eatAt(x,y,r),onBugKilled:handleBugKilled,onBugRevived:handleBugRevived,onBravioSpawn:(x,y)=>Effects.spawnFlame(x,y,{dpr}),onTorazoRevive:b=>Effects.spawnFlame(b.x,b.y,{dpr,mode:'revive'})});
 const bc=document.getElementById('bugCount');
 const initial=bc?parseInt(bc.value)||100:100;
@@ -375,7 +349,7 @@ try{document.getElementById('lost').style.display='none'}catch(e){}try{document.
 resetVoidLayer();
 Effects.clear();
 shootCooldown=0;
-Object.values(tools).forEach(t=>{if(t&&typeof t.resetForRun==='function')t.resetForRun();});
+[h,f,i,g].forEach(t=>{if(t&&typeof t.resetForRun==='function')t.resetForRun();});
 Bugs.resetForRun();
 runStart=null;
 stopFlameAudio();
@@ -401,10 +375,11 @@ if(ts>=hudNext){updateHUD();
 hudNext=ts+100;}
 requestAnimationFrame(step);
 return}const tool=currentToolObj();
-if(pointer.down&&toolKey==='f')tool.hitAt(pointer.x,pointer.y,dt);
-if(pointer.down&&toolKey==='i')tool.hitAt(pointer.x,pointer.y,dt);
-if(pointer.down&&toolKey==='g'){shootCooldown-=dt;
-if(shootCooldown<=0){tool.hitAt(pointer.x,pointer.y);
+const activeKey=getToolKey();
+if(pointer.down&&activeKey==='f'&&tool&&typeof tool.hitAt==='function')tool.hitAt(pointer.x,pointer.y,dt);
+if(pointer.down&&activeKey==='i'&&tool&&typeof tool.hitAt==='function')tool.hitAt(pointer.x,pointer.y,dt);
+if(pointer.down&&activeKey==='g'){shootCooldown-=dt;
+if(shootCooldown<=0&&tool&&typeof tool.hitAt==='function'){tool.hitAt(pointer.x,pointer.y);
 shootCooldown=.045;}}
 Bugs.update(dt);
 ctx.drawImage(damageCanvas,0,0);
