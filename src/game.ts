@@ -4,11 +4,7 @@ import { Bugs, MAX_BUGS } from "./bugs";
 import { Effects } from "./effects";
 import {
   hammerTool, flameTool, sprayTool, gunTool,
-  getTool,
-  getToolKey,
-  setToolByKey,
-  initAll,
-  configureToolsRuntime,
+  getTool, getToolKey, setToolByKey, initAll, configureToolsRuntime
 } from "./tools";
 
 (() => {
@@ -281,8 +277,11 @@ voidCanvas.width=W;
 voidCanvas.height=H}window.addEventListener('resize',resize);
 function boot(){try{applyI18N();
 resize();
+if (typeof window !== "undefined") {
+  Object.assign(window, { h: hammerTool, f: flameTool, i: sprayTool, g: gunTool });
+}
 initAll();
-if(false){console.debug('TOOLS',{hasH:!!h,hasF:!!f,hasI:!!i,hasG:!!g});}
+if(false){console.debug('TOOLS',{hasHammer:!!hammerTool,hasFlame:!!flameTool,hasSpray:!!sprayTool,hasGun:!!gunTool});}
 Bugs.init({dpr,getBounds:()=>({width:W,height:H}),getEatRate:()=>EAT_RATE,onBugEat:(x,y,r)=>eatAt(x,y,r),onBugKilled:handleBugKilled,onBugRevived:handleBugRevived,onBravioSpawn:(x,y)=>Effects.spawnFlame(x,y,{dpr}),onTorazoRevive:b=>Effects.spawnFlame(b.x,b.y,{dpr,mode:'revive'})});
 const bc=document.getElementById('bugCount');
 const initial=bc?parseInt(bc.value)||100:100;
