@@ -4,8 +4,17 @@ import { Bugs, MAX_BUGS } from "./bugs";
 import { Effects } from "./effects";
 import {
   hammerTool, flameTool, sprayTool, gunTool,
-  getTool, getToolKey, setToolByKey, initAll, configureToolsRuntime
+  getTool, getToolKey, setToolByKey, initAll, configureToolsRuntime,
+  installWindowTraps, debugSnapshot
 } from "./tools";
+
+if (typeof Error !== 'undefined') {
+  try { (Error as any).stackTraceLimit = 50; } catch {}
+}
+if (typeof window !== "undefined") {
+  installWindowTraps();
+  debugSnapshot('before-boot');
+}
 
 if (typeof window !== "undefined" && window.h && typeof window.h !== "object") {
   try { delete window.h; delete window.f; delete window.i; delete window.g; } catch {}
@@ -23,8 +32,8 @@ function dbg(m){try{const el=$('#debug');
 if(!el)return;
 el.style.display='block';
 const t=new Date().toLocaleTimeString();
-el.innerHTML=`<div>[${t}] ${m}</div>`+el.innerHTML}catch(e){}}window.onerror=(m,s,l)=>dbg('Error: '+m+' @'+l);
-window.onunhandledrejection=e=>dbg('Rejection: '+e.reason);
+el.innerHTML=`<div>[${t}] ${m}</div>`+el.innerHTML}catch(e){}}window.onerror=(m,s,l,c,err)=>{console.log('[DBG] onerror',{msg:m,src:s,line:l,col:c,stack:err&&err.stack});dbg('Error: '+m+' @'+l);};
+window.onunhandledrejection=e=>{console.log('[DBG] unhandled',e&&e.reason&&e.reason.stack?e.reason.stack:e);dbg('Rejection: '+e.reason);};
 const canvas=$('#game'),ctx=canvas.getContext('2d',{alpha:false});
 const dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
 Effects.init();
@@ -284,7 +293,17 @@ function boot(){try{applyI18N();
   if (typeof window !== "undefined") {
     Object.assign(window, { h: hammerTool, f: flameTool, i: sprayTool, g: gunTool });
   }
-  // initAll();
+  try {
+    console.log('[DBG] boot:before initAll');
+    debugSnapshot('pre-initAll');
+    initAll();
+    console.log('[DBG] boot:after initAll');
+    debugSnapshot('post-initAll');
+  } catch (e) {
+    console.error('[DBG] boot:initAll failed', e && e.message, e && e.stack);
+    debugSnapshot('initAll-exception');
+    throw e;
+  }
 if(false){console.debug('TOOLS',{hasHammer:!!hammerTool,hasFlame:!!flameTool,hasSpray:!!sprayTool,hasGun:!!gunTool});}
 Bugs.init({dpr,getBounds:()=>({width:W,height:H}),getEatRate:()=>EAT_RATE,onBugEat:(x,y,r)=>eatAt(x,y,r),onBugKilled:handleBugKilled,onBugRevived:handleBugRevived,onBravioSpawn:(x,y)=>Effects.spawnFlame(x,y,{dpr}),onTorazoRevive:b=>Effects.spawnFlame(b.x,b.y,{dpr,mode:'revive'})});
 const bc=document.getElementById('bugCount');
