@@ -7,6 +7,10 @@ import {
   getTool, getToolKey, setToolByKey, initAll, configureToolsRuntime
 } from "./tools";
 
+if (typeof window !== "undefined" && window.h && typeof window.h !== "object") {
+  try { delete window.h; delete window.f; delete window.i; delete window.g; } catch {}
+}
+
 (() => {
 'use strict';
 let LANG='es';
@@ -276,11 +280,11 @@ damageCanvas.height=H;
 voidCanvas.width=W;
 voidCanvas.height=H}window.addEventListener('resize',resize);
 function boot(){try{applyI18N();
-resize();
-if (typeof window !== "undefined") {
-  Object.assign(window, { h: hammerTool, f: flameTool, i: sprayTool, g: gunTool });
-}
-initAll();
+  resize();
+  if (typeof window !== "undefined") {
+    Object.assign(window, { h: hammerTool, f: flameTool, i: sprayTool, g: gunTool });
+  }
+  // initAll();
 if(false){console.debug('TOOLS',{hasHammer:!!hammerTool,hasFlame:!!flameTool,hasSpray:!!sprayTool,hasGun:!!gunTool});}
 Bugs.init({dpr,getBounds:()=>({width:W,height:H}),getEatRate:()=>EAT_RATE,onBugEat:(x,y,r)=>eatAt(x,y,r),onBugKilled:handleBugKilled,onBugRevived:handleBugRevived,onBravioSpawn:(x,y)=>Effects.spawnFlame(x,y,{dpr}),onTorazoRevive:b=>Effects.spawnFlame(b.x,b.y,{dpr,mode:'revive'})});
 const bc=document.getElementById('bugCount');

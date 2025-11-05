@@ -155,8 +155,9 @@ export function getTool(){ return toolsByKey[toolKey] || hammerTool; }
 
 // ¡Clave!: initAll sin h/f/i/g
 export function initAll(){
-  const t = toolsByKey;
-  t['h'].init(); t['f'].init(); t['i'].init(); t['g'].init();
+  const t = (k)=> (toolsByKey && toolsByKey[k]) || null;
+  const call = (x)=> x && typeof x.init === 'function' && x.init();
+  call(t('h')); call(t('f')); call(t('i')); call(t('g'));
 }
 
 // Alias globales solo por compatibilidad (no los uses internamente)
