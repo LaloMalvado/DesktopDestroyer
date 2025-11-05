@@ -1,2 +1,8 @@
 import { defineConfig } from "vite";
-export default defineConfig({ base: "/DesktopDestroyer/" });
+
+export default defineConfig({
+  base: "/DesktopDestroyer/",
+  build: {
+    sourcemap: true,
+  },
+});

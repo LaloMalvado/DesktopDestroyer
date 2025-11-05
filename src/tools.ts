@@ -155,9 +155,24 @@ export function getTool(){ return toolsByKey[toolKey] || hammerTool; }
 
 // ¡Clave!: initAll sin h/f/i/g
 export function initAll(){
-  const t = (k)=> (toolsByKey && toolsByKey[k]) || null;
-  const call = (x)=> x && typeof x.init === 'function' && x.init();
-  call(t('h')); call(t('f')); call(t('i')); call(t('g'));
+  try {
+    console.log('[DBG] initAll:start', {
+      tH: typeOf((toolsByKey && toolsByKey['h'])),
+      tF: typeOf((toolsByKey && toolsByKey['f'])),
+      tI: typeOf((toolsByKey && toolsByKey['i'])),
+      tG: typeOf((toolsByKey && toolsByKey['g'])),
+      kH: keysOf((toolsByKey && toolsByKey['h'])),
+    });
+    const t = toolsByKey;
+    t['h'] && typeof t['h'].init === 'function' ? t['h'].init() : console.error('[DBG] initAll: h.init missing', t['h']);
+    t['f'] && typeof t['f'].init === 'function' ? t['f'].init() : console.error('[DBG] initAll: f.init missing', t['f']);
+    t['i'] && typeof t['i'].init === 'function' ? t['i'].init() : console.error('[DBG] initAll: i.init missing', t['i']);
+    t['g'] && typeof t['g'].init === 'function' ? t['g'].init() : console.error('[DBG] initAll: g.init missing', t['g']);
+    console.log('[DBG] initAll:done');
+  } catch(e){
+    console.error('[DBG] initAll:EXCEPTION', e && e.message, e && e.stack);
+    throw e;
+  }
 }
 
 // Alias globales solo por compatibilidad (no los uses internamente)
@@ -166,4 +181,45 @@ if (typeof window !== "undefined") {
     h: hammerTool, f: flameTool, i: sprayTool, g: gunTool,
     setToolByKey, getTool
   });
+}
+
+function typeOf(v){ return v===null?'null':Array.isArray(v)?'array':typeof v; }
+function keysOf(v){ try { return v && typeof v==='object' ? Object.keys(v) : []; } catch{ return []; } }
+
+export function installWindowTraps(){
+  try {
+    const trap = (name) => {
+      let _val = window[name];
+      Object.defineProperty(window, name, {
+        configurable: true,
+        get(){
+          try { console.warn(`[DBG] GET window.${name}`, { type: typeOf(_val), keys: keysOf(_val), stack: new Error().stack }); } catch {}
+          return _val;
+        },
+        set(v){
+          try { console.warn(`[DBG] SET window.${name}`, { newType: typeOf(v), newKeys: keysOf(v), stack: new Error().stack }); } catch {}
+          _val = v;
+        }
+      });
+    };
+    ['h','f','i','g'].forEach(trap);
+  } catch(e) {
+    console.warn('[DBG] installWindowTraps failed', e);
+  }
+}
+
+export function debugSnapshot(label=''){
+  try {
+    const snap = {
+      label,
+      win: {
+        h: { type: typeOf(window.h), keys: keysOf(window.h) },
+        f: { type: typeOf(window.f), keys: keysOf(window.f) },
+        i: { type: typeOf(window.i), keys: keysOf(window.i) },
+        g: { type: typeOf(window.g), keys: keysOf(window.g) },
+      }
+    };
+    console.log('[DBG] snapshot', snap);
+    return snap;
+  } catch(e){ console.log('[DBG] snapshot err', e); }
 }
